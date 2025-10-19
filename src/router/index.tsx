@@ -24,6 +24,7 @@ import MainLayout from "../components/layout/main-layout"
 import PerawatPage from "@/pages/nurse"
 import PasienPage from "@/pages/patient"
 import PatientHistoriesPage from "@/pages/patient-histories"
+import NurseHistoriesPage from "@/pages/nurse-histories"
 
 export default function Router() {
   return (
@@ -113,6 +114,14 @@ export default function Router() {
               element={
                 <Suspense fallback={<TablePageSkeleton />}>
                   <PerawatPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/riwayat-perawat"
+              element={
+                <Suspense fallback={<TablePageSkeleton />}>
+                  <NurseHistoriesPage />
                 </Suspense>
               }
             />

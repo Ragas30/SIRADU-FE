@@ -1,9 +1,12 @@
+// src/components/layout/sidebar.tsx
+"use client"
+
 import { NavLink, useLocation } from "react-router-dom"
-import { LayoutDashboard, Users, Shield, FileText, Settings, LogOut, Users2 } from "lucide-react"
+import { LayoutDashboard, Stethoscope, History, ClipboardList, Settings, LogOut, UserCircle } from "lucide-react"
+import { useMemo } from "react"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/axios"
 
-// komponen dari shadcn block "sidebar"
 import {
   Sidebar,
   SidebarHeader,
@@ -18,47 +21,61 @@ import {
   SidebarSeparator,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { RoleName } from "@/types/auth"
+import type { RoleName } from "@/types/auth"
 
-// tipe menu sederhana + roles
 type MenuItem = {
   label: string
   href: string
   icon: React.ComponentType<{ className?: string }>
-  roles?: RoleName[] // roles yang diizinkan, undefined = semua
+  roles?: RoleName[] // jika diisi, hanya role tsb yang bisa melihat
 }
 
 export default function AppSidebar() {
   const location = useLocation()
   const { user, logout } = useAuthStore()
-  console.log(user)
-  const roles = user?.role ? [user.role] : []
-  console.log(roles)
 
-  const isAllowed = (item: MenuItem) => {
+  // role backend-mu tampaknya single (user.role)
+  const roles = useMemo<RoleName[]>(() => (user?.role ? [user.role as RoleName] : []), [user?.role])
+
+  const canSee = (item: MenuItem) => {
     if (!item.roles || item.roles.length === 0) return true
-    if (item.roles.includes("*" as RoleName)) return true
     return item.roles.some((r) => roles.includes(r))
   }
 
-  const menus: MenuItem[] = (
-    [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      // { label: "Users", href: "/users", icon: Users, roles: ["KEPALA_PERAWAT", "MANAGER"] },
-      { label: "Perawat", href: "/perawat", icon: Users2, roles: ["KEPALA_PERAWAT", "MANAGER"] },
-      { label: "Pasien", href: "/pasien", icon: Shield, roles: ["KEPALA_PERAWAT", "MANAGER"] },
-      { label: "Riwayat Pasien", href: "/riwayat-pasien", icon: Shield, roles: ["KEPALA_PERAWAT", "MANAGER"] },
-      { label: "Roles", href: "/roles", icon: Users2, roles: ["KEPALA_PERAWAT", "MANAGER"] },
-      { label: "Audit Logs", href: "/audit-logs", icon: FileText, roles: ["KEPALA_PERAWAT", "MANAGER"] },
-      { label: "Settings", href: "/settings", icon: Settings },
-    ] as MenuItem[]
-  ).filter(isAllowed)
+  // --- Groups terstruktur ---
+  const groups: { label: string; items: MenuItem[] }[] = [
+    {
+      label: "Overview",
+      items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }],
+    },
+    {
+      label: "Data Master",
+      items: [
+        { label: "Perawat", href: "/perawat", icon: Stethoscope, roles: ["KEPALA_PERAWAT", "MANAGER"] },
+        { label: "Pasien", href: "/pasien", icon: UserCircle, roles: ["KEPALA_PERAWAT", "MANAGER"] },
+      ],
+    },
+    {
+      label: "Riwayat",
+      items: [
+        {
+          label: "Riwayat Perawat",
+          href: "/riwayat-perawat",
+          icon: ClipboardList,
+          roles: ["KEPALA_PERAWAT", "MANAGER"],
+        },
+        { label: "Riwayat Pasien", href: "/riwayat-pasien", icon: History, roles: ["KEPALA_PERAWAT", "MANAGER"] },
+      ],
+    },
+    {
+      label: "Pengaturan",
+      items: [{ label: "Settings", href: "/settings", icon: Settings }],
+    },
+  ]
 
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout", {}, { successToast: true })
-    } catch (e) {
-      // ignore
     } finally {
       logout()
       window.location.href = "/login"
@@ -68,31 +85,40 @@ export default function AppSidebar() {
   return (
     <Sidebar className="border-r">
       <SidebarHeader>
-        <div className="px-2 py-3 font-bold text-primary text-lg">Siradu</div>
+        <div className="px-3 py-3 font-semibold tracking-tight">
+          <span className="text-primary">Siradu</span>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menus.map((item) => {
-                const Icon = item.icon
-                const active = location.pathname === item.href || location.pathname.startsWith(item.href + "/")
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={active}>
-                      <NavLink to={item.href} className="gap-3">
-                        <Icon className="h-5 w-5" />
-                        <span>{item.label}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {groups.map((group) => {
+          const visibleItems = group.items.filter(canSee)
+          if (visibleItems.length === 0) return null
+          return (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {visibleItems.map((item) => {
+                    const Icon = item.icon
+                    // aktif jika persis path atau berada di bawahnya
+                    const active = location.pathname === item.href || location.pathname.startsWith(item.href + "/")
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton asChild isActive={active}>
+                          <NavLink to={item.href} className="gap-3">
+                            <Icon className="h-5 w-5" />
+                            <span>{item.label}</span>
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )
+        })}
       </SidebarContent>
 
       <SidebarSeparator />
@@ -109,8 +135,9 @@ export default function AppSidebar() {
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
+
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive gap-3">
+            <SidebarMenuButton onClick={handleLogout} className="text-destructive gap-3 hover:text-destructive">
               <LogOut className="h-5 w-5" />
               <span>Logout</span>
             </SidebarMenuButton>
@@ -118,7 +145,6 @@ export default function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
 
-      {/* rail untuk mode collapsed (dari block) */}
       <SidebarRail />
     </Sidebar>
   )
