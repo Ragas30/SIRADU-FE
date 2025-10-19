@@ -99,9 +99,7 @@ export default function ProfilePage() {
                 <div>
                   <Label className="text-muted-foreground">Roles</Label>
                   <div className="flex gap-2 mt-2">
-                    {user?.roles.map((role) => (
-                      <Badge key={role.id}>{role.name}</Badge>
-                    ))}
+                    <Badge key={user?.role}>{user?.role}</Badge>
                   </div>
                 </div>
                 <Button onClick={() => setIsEditingProfile(true)}>Edit Profile</Button>

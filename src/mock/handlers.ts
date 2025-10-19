@@ -8,15 +8,7 @@ const mockUser: User = {
   id: "1",
   name: "Admin User",
   email: "admin@example.com",
-  roles: [
-    {
-      id: "1",
-      name: "ADMIN",
-      permissions: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  ],
+  role: "KEPALA_PERAWAT",
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 }
@@ -27,15 +19,7 @@ const mockUsers: User[] = [
     id: "2",
     name: "Manager User",
     email: "manager@example.com",
-    roles: [
-      {
-        id: "2",
-        name: "MANAGER",
-        permissions: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ],
+    role: "MANAGER",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -111,7 +95,7 @@ export const handlers = [
       id: String(mockUsers.length + 1),
       name: body.name || "",
       email: body.email || "",
-      roles: body.roles || [],
+      role: body.role || "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }

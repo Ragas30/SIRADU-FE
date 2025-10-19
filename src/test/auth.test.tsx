@@ -30,7 +30,7 @@ describe("Auth Store", () => {
       id: "1",
       name: "Test User",
       email: "test@example.com",
-      roles: [],
+      role: "KEPALA_PERAWAT",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
