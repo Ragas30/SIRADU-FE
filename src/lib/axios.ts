@@ -40,6 +40,7 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
+        // Jika sedang refresh, tunggu hasilnya
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
         })
@@ -55,15 +56,24 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(`${baseURL}/auth/refresh`, {}, { withCredentials: true })
+
         const { accessToken } = response.data
+
         useAuthStore.getState().setAccessToken(accessToken)
+
         processQueue(null, accessToken)
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`
+
+        originalRequest.headers.Authorization = ` Bearer ${accessToken}`
         return api(originalRequest)
       } catch (err) {
         processQueue(err, null)
-        useAuthStore.getState().logout()
-        window.location.href = "/login"
+
+        const { logout } = useAuthStore.getState()
+        logout()
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login"
+        }
+
         return Promise.reject(err)
       } finally {
         isRefreshing = false

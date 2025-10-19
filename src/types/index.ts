@@ -2,7 +2,16 @@ export interface User {
   id: string
   name: string
   email: string
-  roles: Role[]
+  role: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Nurse {
+  id: string
+  name: string
+  email: string
+  role: string
   createdAt: string
   updatedAt: string
 }

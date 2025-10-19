@@ -1,5 +1,5 @@
 // src/types/auth.ts
-export type RoleName = "ADMIN" | "MANAGER" | "STAFF"
+export type RoleName = "KEPALA_PERAWAT" | "MANAGER" | "STAFF"
 
 export type UserRole = {
   id: string
@@ -10,5 +10,5 @@ export type User = {
   id: string
   name: string
   email: string
-  roles: UserRole[]
+  roles: string
 }

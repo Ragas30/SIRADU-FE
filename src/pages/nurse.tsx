@@ -9,15 +9,15 @@ import Pagination from "@/components/common/pagination"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useList } from "@/hooks/useList"
-import type { User } from "@/types"
+import type { Nurse, User } from "@/types"
 
-export default function UsersPage() {
+export default function PerawatPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
-  const [sortBy, setSortBy] = useState<keyof User>("name")
+  const [sortBy, setSortBy] = useState<keyof Nurse>("name")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
 
-  const { data, isLoading } = useList<User>("users", {
+  const { data, isLoading } = useList<Nurse>("nurse", {
     page,
     pageSize: 10,
     search,
@@ -25,7 +25,7 @@ export default function UsersPage() {
     sortOrder,
   })
 
-  const columns: Column<User>[] = [
+  const columns: Column<Nurse>[] = [
     {
       key: "name",
       label: "Name",
@@ -40,11 +40,11 @@ export default function UsersPage() {
       key: "role",
       label: "Roles",
       render: (value) => {
-        const roles = value as User["role"]
+        const roles = value as Nurse["role"]
         return (
           <div className="flex gap-1">
             <Badge key={roles} variant="secondary">
-              {roles === "KEPALA_PERAWAT" ? "KEPALA PERAWAT" : ""}
+              {roles === "KEPALA_PERAWAT" ? "KEPALA PERAWAT" : roles === "PERAWAT" ? "PERAWAT" : ""}
             </Badge>
           </div>
         )
@@ -72,7 +72,7 @@ export default function UsersPage() {
 
       <Toolbar search={search} onSearchChange={setSearch} />
 
-      <DataTable<User>
+      <DataTable<Nurse>
         columns={columns}
         data={data?.data || []}
         isLoading={isLoading}

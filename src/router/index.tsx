@@ -21,6 +21,7 @@ const ForbiddenPage = lazy(() => import("@/pages/403"))
 // Fallback-fallback kontekstual
 import { TablePageSkeleton } from "../components/ui/TablePageSkeleton"
 import MainLayout from "../components/layout/main-layout"
+import PerawatPage from "@/pages/nurse"
 
 export default function Router() {
   return (
@@ -96,12 +97,20 @@ export default function Router() {
             }
           />
 
-          <Route element={<RequireRole roles={["ADMIN", "MANAGER"]} />}>
+          <Route element={<RequireRole roles={["KEPALA_PERAWAT", "MANAGER"]} />}>
             <Route
               path="/users"
               element={
                 <Suspense fallback={<TablePageSkeleton />}>
                   <UsersPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/perawat"
+              element={
+                <Suspense fallback={<TablePageSkeleton />}>
+                  <PerawatPage />
                 </Suspense>
               }
             />

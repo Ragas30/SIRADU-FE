@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom"
-import { LayoutDashboard, Users, Shield, FileText, Settings, LogOut } from "lucide-react"
+import { LayoutDashboard, Users, Shield, FileText, Settings, LogOut, Users2 } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/axios"
 
@@ -31,7 +31,9 @@ type MenuItem = {
 export default function AppSidebar() {
   const location = useLocation()
   const { user, logout } = useAuthStore()
-  const roles = user?.roles?.map((r) => r.name) ?? []
+  console.log(user)
+  const roles = user?.role ? [user.role] : []
+  console.log(roles)
 
   const isAllowed = (item: MenuItem) => {
     if (!item.roles || item.roles.length === 0) return true
@@ -42,9 +44,10 @@ export default function AppSidebar() {
   const menus: MenuItem[] = (
     [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Users", href: "/users", icon: Users, roles: ["ADMIN", "MANAGER"] },
-      { label: "Roles", href: "/roles", icon: Shield, roles: ["ADMIN", "MANAGER"] },
-      { label: "Audit Logs", href: "/audit-logs", icon: FileText, roles: ["ADMIN", "MANAGER"] },
+      // { label: "Users", href: "/users", icon: Users, roles: ["KEPALA_PERAWAT", "MANAGER"] },
+      { label: "Perawat", href: "/perawat", icon: Users2, roles: ["KEPALA_PERAWAT", "MANAGER"] },
+      { label: "Roles", href: "/roles", icon: Shield, roles: ["KEPALA_PERAWAT", "MANAGER"] },
+      { label: "Audit Logs", href: "/audit-logs", icon: FileText, roles: ["KEPALA_PERAWAT", "MANAGER"] },
       { label: "Settings", href: "/settings", icon: Settings },
     ] as MenuItem[]
   ).filter(isAllowed)
