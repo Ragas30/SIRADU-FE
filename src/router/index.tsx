@@ -22,6 +22,8 @@ const ForbiddenPage = lazy(() => import("@/pages/403"))
 import { TablePageSkeleton } from "../components/ui/TablePageSkeleton"
 import MainLayout from "../components/layout/main-layout"
 import PerawatPage from "@/pages/nurse"
+import PasienPage from "@/pages/patient"
+import PatientHistoriesPage from "@/pages/patient-histories"
 
 export default function Router() {
   return (
@@ -111,6 +113,22 @@ export default function Router() {
               element={
                 <Suspense fallback={<TablePageSkeleton />}>
                   <PerawatPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/pasien"
+              element={
+                <Suspense fallback={<TablePageSkeleton />}>
+                  <PasienPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/riwayat-pasien"
+              element={
+                <Suspense fallback={<TablePageSkeleton />}>
+                  <PatientHistoriesPage />
                 </Suspense>
               }
             />

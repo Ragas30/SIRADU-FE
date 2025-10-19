@@ -89,3 +89,19 @@ src/
 ## License
 
 MIT
+
+### Contoh Penggunaan Axios dengan React Query
+
+Untuk memperbarui penggunaan Axios dengan React Query, kita lihat contoh berikut:
+
+// Tampilkan success toast kalau server kirim { message: "Perawat ditambahkan" }
+await api.post("/nurse/add", payload, { successToast: true })
+
+// Custom success message
+await api.put(`/nurse/${id}`, body, { successToast: true, successMessage: "Data perawat diperbarui" })
+
+// Matikan semua toast
+await api.get("/stats", { silent: true })
+
+// Matikan error toast (tangani manual)
+await api.delete(`/nurse/${id}`, { errorToast: false })

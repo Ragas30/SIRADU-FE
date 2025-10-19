@@ -46,7 +46,9 @@ export default function AppSidebar() {
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       // { label: "Users", href: "/users", icon: Users, roles: ["KEPALA_PERAWAT", "MANAGER"] },
       { label: "Perawat", href: "/perawat", icon: Users2, roles: ["KEPALA_PERAWAT", "MANAGER"] },
-      { label: "Roles", href: "/roles", icon: Shield, roles: ["KEPALA_PERAWAT", "MANAGER"] },
+      { label: "Pasien", href: "/pasien", icon: Shield, roles: ["KEPALA_PERAWAT", "MANAGER"] },
+      { label: "Riwayat Pasien", href: "/riwayat-pasien", icon: Shield, roles: ["KEPALA_PERAWAT", "MANAGER"] },
+      { label: "Roles", href: "/roles", icon: Users2, roles: ["KEPALA_PERAWAT", "MANAGER"] },
       { label: "Audit Logs", href: "/audit-logs", icon: FileText, roles: ["KEPALA_PERAWAT", "MANAGER"] },
       { label: "Settings", href: "/settings", icon: Settings },
     ] as MenuItem[]
@@ -54,7 +56,7 @@ export default function AppSidebar() {
 
   const handleLogout = async () => {
     try {
-      await api.post("/auth/logout")
+      await api.post("/auth/logout", {}, { successToast: true })
     } catch (e) {
       // ignore
     } finally {
@@ -66,7 +68,7 @@ export default function AppSidebar() {
   return (
     <Sidebar className="border-r">
       <SidebarHeader>
-        <div className="px-2 py-3 font-bold text-primary text-lg">Admin</div>
+        <div className="px-2 py-3 font-bold text-primary text-lg">Siradu</div>
       </SidebarHeader>
 
       <SidebarContent>

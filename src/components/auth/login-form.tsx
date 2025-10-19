@@ -37,7 +37,7 @@ export default function LoginForm() {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await api.post("/dashboard/login", data)
+      const response = await api.post("/dashboard/login", data, { successToast: true })
       setAccessToken(response?.data?.data?.accessToken || null)
       setUser(response?.data?.data?.user || null)
       navigate("/dashboard")
@@ -51,8 +51,8 @@ export default function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Login</CardTitle>
-        <CardDescription>Enter your credentials to access the dashboard</CardDescription>
+        <CardTitle>Masuk</CardTitle>
+        <CardDescription>Masukkan kredensial Anda untuk mengakses dashboard</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -76,7 +76,7 @@ export default function LoginForm() {
 
           <div className="text-center text-sm">
             <a href="/forgot-password" className="text-primary hover:underline">
-              Forgot password?
+              Lupa password?
             </a>
           </div>
         </form>

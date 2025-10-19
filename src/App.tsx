@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react"
 import Router from "./router"
 import { useAuthStore } from "./store/auth"
 import { useThemeStore } from "./store/theme"
+import { Toaster } from "@/components/ui/sonner" // alias shadcn block
 
 declare global {
   interface Window {
@@ -48,6 +49,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Router />
+        <Toaster richColors position="top-center" closeButton expand={false} duration={3000} />
       </BrowserRouter>
     </QueryClientProvider>
   )

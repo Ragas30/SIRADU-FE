@@ -12,6 +12,8 @@ export interface Nurse {
   name: string
   email: string
   role: string
+  phone: string
+  address: string
   createdAt: string
   updatedAt: string
 }

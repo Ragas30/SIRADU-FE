@@ -16,7 +16,8 @@ export default function Pagination({ page, pageSize, total, onPageChange }: Pagi
   return (
     <div className="flex items-center justify-between">
       <p className="text-sm text-muted-foreground">
-        Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, total)} of {total} results
+        Menampilkan {Math.max(1, (page - 1) * pageSize + 1)} - {Math.min(page * pageSize, total)} dari {total} hasil
+        pencarian{" "}
       </p>
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={() => onPageChange(page - 1)} disabled={page === 1}>

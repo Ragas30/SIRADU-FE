@@ -23,7 +23,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => set({ user: null, accessToken: null }),
   initializeAuth: async () => {
     try {
-      const response = await api.post("/auth/refresh")
+      const response = await api.post("/auth/refresh", {}, { successToast: true })
       set({ user: response.data, isLoading: false })
     } catch (error) {
       set({ isLoading: false, error: "Failed to initialize auth" })
