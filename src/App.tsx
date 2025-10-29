@@ -1,4 +1,3 @@
-// src/App.tsx
 "use client"
 
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query"
@@ -7,7 +6,7 @@ import { useEffect, useRef } from "react"
 import Router from "./router"
 import { useAuthStore } from "./store/auth"
 import { useThemeStore } from "./store/theme"
-import { Toaster } from "@/components/ui/sonner" // alias shadcn block
+import { Toaster } from "@/components/ui/sonner"
 
 declare global {
   interface Window {
@@ -20,7 +19,6 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5,
       gcTime: 1000 * 60 * 10,
-      // hindari auto-refetch saat fokus yang bisa memicu request awal ganda:
       refetchOnWindowFocus: false,
       retry: false,
     },
@@ -33,17 +31,15 @@ export default function App() {
   const ran = useRef(false)
 
   useEffect(() => {
-    // Guard 1: cegah double-invoke StrictMode
     if (ran.current) return
     ran.current = true
 
-    // Guard 2: cegah remount dari HMR
     if (window.__APP_INIT_DONE__) return
     window.__APP_INIT_DONE__ = true
 
     initializeTheme()
     initializeAuth()
-  }, []) // sengaja deps kosong
+  }, [])
 
   return (
     <QueryClientProvider client={queryClient}>

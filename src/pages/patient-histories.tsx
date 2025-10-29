@@ -12,8 +12,6 @@ import { Badge } from "@/components/ui/badge"
 import { useList } from "@/hooks/useList"
 import { api } from "@/lib/axios"
 import { toast } from "sonner"
-
-// shadcn dialog
 import {
   Dialog,
   DialogContent,
@@ -22,8 +20,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog"
-
-// PDF
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
@@ -34,12 +30,18 @@ type HistoryRow = {
   nurseId: string
   bradenQ: number
   Time: string
-  foto: string
+  foto: string | null
+  roomName: string | null
+  dekubitus: boolean
   patient?: { id: string; name: string }
   nurse?: { id: string; name: string }
 }
 
 type Period = "day" | "week" | "month" | "custom"
+
+const ID_TZ = "Asia/Jakarta"
+const fmtID = (v: string | number | Date, opts?: Intl.DateTimeFormatOptions) =>
+  new Date(v).toLocaleString("id-ID", { timeZone: ID_TZ, dateStyle: "short", timeStyle: "short", ...opts })
 
 function startOfTodayISO() {
   const d = new Date()
@@ -84,8 +86,6 @@ export default function PatientHistoriesPage() {
   const [period, setPeriod] = useState<Period>("day")
   const [customFrom, setCustomFrom] = useState("")
   const [customTo, setCustomTo] = useState("")
-
-  // modal foto
   const [photoOpen, setPhotoOpen] = useState(false)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoTitle, setPhotoTitle] = useState<string>("")
@@ -99,7 +99,6 @@ export default function PatientHistoriesPage() {
     return { startDate: s, endDate: e }
   }, [period, customFrom, customTo])
 
-  // GET /api/patient-histories
   const { data, isLoading } = useList<HistoryRow>("patient-histories", {
     page,
     pageSize: 10,
@@ -110,19 +109,24 @@ export default function PatientHistoriesPage() {
     sortOrder: "desc",
   })
 
-  // kolom tabel
   const columns: Column<HistoryRow>[] = [
     {
-      key: "patientId",
-      label: "Pasien",
+      key: "patient",
+      label: "Nama Pasien",
       sortable: true,
-      render: (_, row) => row.patient?.name ?? row.patientId,
+      render: (_, row) => row.patient?.name ?? "-",
     },
     {
-      key: "nurseId",
-      label: "Perawat",
+      key: "nurse",
+      label: "Nama Perawat",
       sortable: true,
-      render: (_, row) => row.nurse?.name ?? row.nurseId,
+      render: (_, row) => row.nurse?.name ?? "-",
+    },
+    {
+      key: "roomName",
+      label: "Ruangan",
+      sortable: true,
+      render: (v) => (v ? <Badge variant="outline">{String(v)}</Badge> : "-"),
     },
     {
       key: "position",
@@ -132,10 +136,16 @@ export default function PatientHistoriesPage() {
     },
     { key: "bradenQ", label: "BradenQ", sortable: true },
     {
+      key: "dekubitus",
+      label: "Dekubitus",
+      sortable: true,
+      render: (v) => (v ? <Badge variant="destructive">Ya</Badge> : <Badge variant="default">Tidak</Badge>),
+    },
+    {
       key: "Time",
       label: "Waktu",
       sortable: true,
-      render: (v) => new Date(String(v)).toLocaleString(),
+      render: (v) => fmtID(String(v)),
     },
     {
       key: "foto",
@@ -146,8 +156,8 @@ export default function PatientHistoriesPage() {
             variant="outline"
             size="sm"
             onClick={() => {
-              setPhotoUrl(row.foto)
-              setPhotoTitle(`${row.patient?.name ?? row.patientId} - ${new Date(row.Time).toLocaleString()}`)
+              setPhotoUrl(row.foto as string)
+              setPhotoTitle(`${row.patient?.name ?? "Pasien Tanpa Nama"} - ${fmtID(row.Time)}`)
               setPhotoOpen(true)
             }}
             className="h-8 gap-2"
@@ -161,7 +171,6 @@ export default function PatientHistoriesPage() {
     },
   ]
 
-  // Export PDF
   const handleExportPdf = async () => {
     try {
       const params: Record<string, any> = {
@@ -191,71 +200,46 @@ export default function PatientHistoriesPage() {
       doc.setFontSize(10)
       doc.text(subtitle, 40, 58)
       doc.setFontSize(9)
-      doc.text(`Dibuat: ${new Date().toLocaleString()}`, 40, 74)
+      doc.text(`Dibuat: ${fmtID(new Date())}`, 40, 74)
 
-      // ...setelah doc/text judul & subtitle
-
-      // 1) Hitung lebar konten yang tersedia (total lebar halaman - margin)
       const marginX = 40
       const pageWidth = doc.internal.pageSize.getWidth()
       const contentWidth = pageWidth - marginX * 2
-
-      // 2) Tentukan bobot kolom (proporsi). Jumlahnya bebas, penting relatifnya.
-      //    [ID, Pasien, Perawat, Posisi, BradenQ, Waktu, Foto]
-      const weights = [8, 18, 18, 12, 7, 30, 7]
+      const weights = [18, 18, 10, 12, 8, 20, 7, 7]
       const totalWeight = weights.reduce((a, b) => a + b, 0)
       const widths = weights.map((w) => Math.floor((w / totalWeight) * contentWidth))
 
       autoTable(doc, {
         startY: 90,
-        // 3) Pastikan margin dipakai agar tabel tidak melewati kertas
         margin: { top: 90, left: marginX, right: marginX },
-
-        head: [["ID", "Nama Pasien", "Nama Perawat", "Posisi", "BradenQ", "Waktu", "Foto"]],
-
-        // Body mapping tetap sama
+        head: [["Nama Pasien", "Nama Perawat", "Ruangan", "Posisi", "Dekubitus", "Waktu", "BradenQ", "Foto"]],
         body: rows.map((r) => [
-          r.id,
-          r.patient?.name ?? r.patientId,
-          r.nurse?.name ?? r.nurseId,
-          r.position.replace("_", " "),
+          r.patient?.name ?? "-",
+          r.nurse?.name ?? "-",
+          r.roomName ?? "-",
+          r.position.replace(/_/g, " "),
+          r.dekubitus ? "Ya" : "Tidak",
+          new Date(r.Time).toLocaleString("id-ID", { timeZone: ID_TZ, dateStyle: "short", timeStyle: "short" }),
           String(r.bradenQ),
-          // Format tanggal pendek agar hemat ruang
-          new Date(r.Time).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" }),
           r.foto ? "Ada" : "-",
         ]),
-
-        // 4) Styling agar muat
-        styles: {
-          fontSize: 8, // kecilkan font
-          cellPadding: 3,
-          overflow: "linebreak", // teks panjang di-wrap, bukan melebar
-          valign: "top",
-        },
-        headStyles: {
-          fontSize: 9,
-          fillColor: [2, 186, 165], // #02BAA5
-        },
-
-        // 5) Kolom pakai lebar proporsional yg dihitung di atas
+        styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak", valign: "top" },
+        headStyles: { fontSize: 9, fillColor: [2, 186, 165] },
         columnStyles: {
-          0: { cellWidth: widths[0] }, // ID
-          1: { cellWidth: widths[1] }, // Pasien
-          2: { cellWidth: widths[2] }, // Perawat
-          3: { cellWidth: widths[3] }, // Posisi
-          4: { cellWidth: widths[4], halign: "right" }, // BradenQ kecil & rata kanan
-          5: { cellWidth: widths[5] }, // Waktu (cukup lebar)
-          6: { cellWidth: widths[6] }, // Foto
+          0: { cellWidth: widths[0] },
+          1: { cellWidth: widths[1] },
+          2: { cellWidth: widths[2] },
+          3: { cellWidth: widths[3] },
+          4: { cellWidth: widths[4] },
+          5: { cellWidth: widths[5] },
+          6: { cellWidth: widths[6], halign: "right" },
+          7: { cellWidth: widths[7] },
         },
-
-        // 6) Pecah baris otomatis antar-halaman jika tinggi berlebih
         pageBreak: "auto",
         rowPageBreak: "auto",
-
         didDrawPage: () => {
-          const pageSize = doc.internal.pageSize
-          const w = pageSize.getWidth()
-          const h = pageSize.getHeight()
+          const w = doc.internal.pageSize.getWidth()
+          const h = doc.internal.pageSize.getHeight()
           doc.setFontSize(9)
           doc.text(`Halaman ${doc.getNumberOfPages()}`, w - 80, h - 20)
         },
@@ -265,13 +249,11 @@ export default function PatientHistoriesPage() {
       const fileName = `patient-histories_${rangeLabel}_${new Date().toISOString().slice(0, 19)}.pdf`
       doc.save(fileName)
       toast.success("Export PDF berhasil.")
-    } catch (e) {
-      console.error(e)
+    } catch {
       toast.error("Gagal export PDF.")
     }
   }
 
-  // Download gambar dari modal
   const downloadPhoto = async () => {
     if (!photoUrl) return
     try {
@@ -307,7 +289,6 @@ export default function PatientHistoriesPage() {
               <option value="month">Bulan ini</option>
               <option value="custom">Custom</option>
             </select>
-
             {period === "custom" && (
               <div className="flex items-center gap-2">
                 <input
@@ -325,7 +306,6 @@ export default function PatientHistoriesPage() {
                 />
               </div>
             )}
-
             <Button onClick={handleExportPdf}>
               <Download className="w-4 h-4 mr-2" />
               Export PDF
@@ -357,7 +337,6 @@ export default function PatientHistoriesPage() {
         </div>
       )}
 
-      {/* Modal Foto */}
       <Dialog open={photoOpen} onOpenChange={(v) => setPhotoOpen(v)}>
         <DialogContent className="sm:max-w-[720px]">
           <DialogHeader>

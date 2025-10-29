@@ -56,9 +56,7 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div>
                 <Label className="text-muted-foreground">API Base URL</Label>
-                <p className="text-sm font-mono bg-muted p-2 rounded mt-2">
-                  {import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api (Mock)"}
-                </p>
+                <p className="text-sm font-mono bg-muted p-2 rounded mt-2">{import.meta.env.VITE_API_BASE_URL}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Environment</Label>

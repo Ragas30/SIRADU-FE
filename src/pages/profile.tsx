@@ -49,13 +49,11 @@ export default function ProfilePage() {
   })
 
   const onProfileSubmit = async (data: ProfileFormData) => {
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
     setIsEditingProfile(false)
   }
 
   const onPasswordSubmit = async (data: PasswordFormData) => {
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
     passwordForm.reset()
     setIsChangingPassword(false)

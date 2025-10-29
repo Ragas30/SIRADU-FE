@@ -1,4 +1,3 @@
-// Router.tsx
 import { Routes, Route, Navigate } from "react-router-dom"
 import { Suspense, lazy } from "react"
 import ProtectedRoute from "./ProtectedRoute"
@@ -18,7 +17,6 @@ const SettingsPage = lazy(() => import("@/pages/settings"))
 const NotFoundPage = lazy(() => import("@/pages/404"))
 const ForbiddenPage = lazy(() => import("@/pages/403"))
 
-// Fallback-fallback kontekstual
 import { TablePageSkeleton } from "../components/ui/TablePageSkeleton"
 import MainLayout from "../components/layout/main-layout"
 import PerawatPage from "@/pages/nurse"

@@ -6,8 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Users, Shield, FileText, TrendingUp } from "lucide-react"
 
 export default function DashboardPage() {
-  // const { user } = useAuthStore()
-
   const stats = [
     {
       title: "Total Users",

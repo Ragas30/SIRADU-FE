@@ -12,7 +12,6 @@ import { useList } from "@/hooks/useList"
 import { api } from "@/lib/axios"
 import { toast } from "sonner"
 
-// shadcn dialog
 import {
   Dialog,
   DialogContent,
@@ -22,11 +21,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 
-// PDF
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
-// ====== Types (asumsi mirip patient histories) ======
 type HistoryRow = {
   id: string
   patientId: string
@@ -41,7 +38,6 @@ type HistoryRow = {
 
 type Period = "day" | "week" | "month" | "custom"
 
-// ====== Date helpers ======
 function startOfTodayISO() {
   const d = new Date()
   d.setHours(0, 0, 0, 0)
@@ -80,37 +76,29 @@ function endOfMonthISO() {
 }
 
 export default function NurseHistoriesPage() {
-  // ====== Query/UI state ======
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
   const [period, setPeriod] = useState<Period>("day")
 
-  // State FILTER AKTIF (yang dipakai fetch & export)
-  const [activeFrom, setActiveFrom] = useState<string | undefined>(undefined) // yyyy-mm-dd
+  const [activeFrom, setActiveFrom] = useState<string | undefined>(undefined)
   const [activeTo, setActiveTo] = useState<string | undefined>(undefined)
 
-  // Draft tanggal untuk UI ketika period=custom (baru berlaku setelah "Terapkan")
   const [draftFrom, setDraftFrom] = useState("")
   const [draftTo, setDraftTo] = useState("")
 
-  // Modal Foto
   const [photoOpen, setPhotoOpen] = useState(false)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoTitle, setPhotoTitle] = useState<string>("")
 
-  // Hitung range AKTIF (bukan draft). Untuk day/week/month dihitung otomatis.
   const { startDate, endDate } = useMemo(() => {
     if (period === "day") return { startDate: startOfTodayISO(), endDate: endOfTodayISO() }
     if (period === "week") return { startDate: startOfWeekISO(), endDate: endOfWeekISO() }
     if (period === "month") return { startDate: startOfMonthISO(), endDate: endOfMonthISO() }
-    // custom: gunakan activeFrom/activeTo (hasil "Terapkan")
     const s = activeFrom ? new Date(activeFrom + "T00:00:00").toISOString() : undefined
     const e = activeTo ? new Date(activeTo + "T23:59:59").toISOString() : undefined
     return { startDate: s, endDate: e }
   }, [period, activeFrom, activeTo])
 
-  // ====== Data fetching (list) ======
-  // Hook useList diasumsikan GET /api/nurse-histories?...
   const { data, isLoading } = useList<HistoryRow>("nurse-histories", {
     page,
     pageSize: 10,
@@ -121,7 +109,6 @@ export default function NurseHistoriesPage() {
     sortOrder: "desc",
   })
 
-  // ====== Tabel ======
   const columns: Column<HistoryRow>[] = [
     {
       key: "nurseId",
@@ -174,15 +161,12 @@ export default function NurseHistoriesPage() {
     },
   ]
 
-  // ====== Terapkan (Custom) ======
   const applyCustomRange = () => {
-    // set filter aktif dari draft & trigger refetch (karena deps berubah)
     setActiveFrom(draftFrom || undefined)
     setActiveTo(draftTo || undefined)
     setPage(1)
   }
 
-  // ====== Export PDF (menggunakan filter AKTIF yang sama dgn tabel) ======
   const handleExportPdf = async () => {
     try {
       const params: Record<string, any> = {
@@ -214,11 +198,9 @@ export default function NurseHistoriesPage() {
       doc.setFontSize(9)
       doc.text(`Dibuat: ${new Date().toLocaleString()}`, 40, 74)
 
-      // Fit to page: gunakan proporsi kolom + margin
       const marginX = 40
       const pageWidth = doc.internal.pageSize.getWidth()
       const contentWidth = pageWidth - marginX * 2
-      // [ID, Perawat, Pasien, Posisi, BradenQ, Waktu, Foto]
       const weights = [8, 18, 18, 12, 7, 30, 7]
       const totalWeight = weights.reduce((a, b) => a + b, 0)
       const widths = weights.map((w) => Math.floor((w / totalWeight) * contentWidth))
@@ -244,16 +226,16 @@ export default function NurseHistoriesPage() {
         },
         headStyles: {
           fontSize: 9,
-          fillColor: [2, 186, 165], // #02BAA5
+          fillColor: [2, 186, 165],
         },
         columnStyles: {
-          0: { cellWidth: widths[0] }, // ID
-          1: { cellWidth: widths[1] }, // Perawat
-          2: { cellWidth: widths[2] }, // Pasien
-          3: { cellWidth: widths[3] }, // Posisi
-          4: { cellWidth: widths[4], halign: "right" }, // BradenQ
-          5: { cellWidth: widths[5] }, // Waktu
-          6: { cellWidth: widths[6] }, // Foto
+          0: { cellWidth: widths[0] },
+          1: { cellWidth: widths[1] },
+          2: { cellWidth: widths[2] },
+          3: { cellWidth: widths[3] },
+          4: { cellWidth: widths[4], halign: "right" },
+          5: { cellWidth: widths[5] },
+          6: { cellWidth: widths[6] },
         },
         pageBreak: "auto",
         rowPageBreak: "auto",
@@ -275,7 +257,6 @@ export default function NurseHistoriesPage() {
     }
   }
 
-  // ====== Download Foto ======
   const downloadPhoto = async () => {
     if (!photoUrl) return
     try {
@@ -309,7 +290,6 @@ export default function NurseHistoriesPage() {
                   const val = e.target.value as Period
                   setPeriod(val)
                   setPage(1)
-                  // Jika keluar dari custom, bersihkan activeFrom/activeTo
                   if (val !== "custom") {
                     setActiveFrom(undefined)
                     setActiveTo(undefined)

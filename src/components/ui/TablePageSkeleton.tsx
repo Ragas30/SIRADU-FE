@@ -1,5 +1,3 @@
-// skeletons/TablePageSkeleton.tsx
-
 import { Skeleton } from "./skeleton"
 
 export function TablePageSkeleton() {
@@ -13,13 +11,11 @@ export function TablePageSkeleton() {
         </div>
       </div>
       <div className="rounded-lg border">
-        {/* header row */}
         <div className="grid grid-cols-6 gap-2 border-b p-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-5 w-24" />
           ))}
         </div>
-        {/* rows */}
         {Array.from({ length: 8 }).map((_, r) => (
           <div key={r} className="grid grid-cols-6 gap-2 p-3 border-b last:border-none">
             {Array.from({ length: 6 }).map((__, c) => (

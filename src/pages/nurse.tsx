@@ -51,12 +51,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-// ---------- Schema ----------
 const NurseCreateSchema = z.object({
   name: z.string().min(3, "Nama minimal 3 karakter"),
   email: z.string().email("Email tidak valid"),
-  // phone: z.string().min(8, "No. HP minimal 8 digit"),
-  // address: z.string().min(5, "Alamat minimal 5 karakter"),
   password: z.string().min(8, "Password minimal 8 karakter"),
 })
 type NurseCreateInput = z.infer<typeof NurseCreateSchema>
@@ -64,14 +61,10 @@ type NurseCreateInput = z.infer<typeof NurseCreateSchema>
 const NurseEditSchema = z.object({
   name: z.string().min(3, "Nama minimal 3 karakter"),
   email: z.string().email("Email tidak valid"),
-  // phone: z.string().min(8, "No. HP minimal 8 digit"),
-  // address: z.string().min(5, "Alamat minimal 5 karakter"),
-  // password opsional saat edit
   password: z.string().min(8, "Password minimal 8 karakter").optional().or(z.literal("")),
 })
 type NurseEditInput = z.infer<typeof NurseEditSchema>
 
-// ---------- Page ----------
 export default function PerawatPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
@@ -86,7 +79,6 @@ export default function PerawatPage() {
 
   const queryClient = useQueryClient()
 
-  // ---------- Queries ----------
   const { data, isLoading } = useList<Nurse>("nurse", {
     page,
     pageSize: 10,
@@ -95,14 +87,11 @@ export default function PerawatPage() {
     sortOrder,
   })
 
-  // ---------- Forms ----------
   const createForm = useForm<NurseCreateInput>({
     resolver: zodResolver(NurseCreateSchema),
     defaultValues: {
       name: "",
       email: "",
-      // phone: "",
-      // address: "",
       password: "",
     },
   })
@@ -112,12 +101,10 @@ export default function PerawatPage() {
     defaultValues: {
       name: "",
       email: "",
-      // phone: "", address: "",
       password: "",
     },
   })
 
-  // ---------- Mutations ----------
   const createMutation = useMutation({
     mutationFn: async (payload: NurseCreateInput) => {
       const { data } = await api.post("/nurse/add", payload, { successToast: true })
@@ -128,8 +115,6 @@ export default function PerawatPage() {
       createForm.reset({
         name: "",
         email: "",
-        // phone: "",
-        // address: "",
         password: "",
       })
       setOpenCreate(false)
@@ -143,8 +128,6 @@ export default function PerawatPage() {
       const body: Record<string, unknown> = {
         name: rest.name,
         email: rest.email,
-        // phone: rest.phone,
-        // address: rest.address,
       }
       if (rest.password) body.password = rest.password
       const { data } = await api.put(`/nurse/${id}`, body, { successToast: true })
@@ -157,8 +140,6 @@ export default function PerawatPage() {
       editForm.reset({
         name: "",
         email: "",
-        // phone: "",
-        // address: "",
         password: "",
       })
     },
@@ -175,12 +156,9 @@ export default function PerawatPage() {
     },
   })
 
-  // ---------- Columns ----------
   const columns: Column<Nurse>[] = [
     { key: "name", label: "Nama", sortable: true },
     { key: "email", label: "Email", sortable: true },
-    // { key: "phone", label: "No. HP", sortable: true },
-    // { key: "address", label: "Alamat" },
     {
       key: "role",
       label: "Peran",
@@ -208,8 +186,6 @@ export default function PerawatPage() {
             editForm.reset({
               name: row.name,
               email: row.email,
-              // phone: (row as any).phone ?? "",
-              // address: (row as any).address ?? "",
               password: "",
             })
             setOpenEdit(true)
@@ -220,15 +196,12 @@ export default function PerawatPage() {
     },
   ]
 
-  // ---------- Helpers ----------
   const handleCloseCreate = (v: boolean) => {
     setOpenCreate(v)
     if (!v) {
       createForm.reset({
         name: "",
         email: "",
-        // phone: "",
-        // address: "",
         password: "",
       })
       createForm.clearErrors()
@@ -243,8 +216,6 @@ export default function PerawatPage() {
       editForm.reset({
         name: "",
         email: "",
-        // phone: "",
-        // address: "",
         password: "",
       })
       editForm.clearErrors()
@@ -299,32 +270,6 @@ export default function PerawatPage() {
                       </FormItem>
                     )}
                   />
-                  {/* <FormField
-                    control={createForm.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>No. HP</FormLabel>
-                        <FormControl>
-                          <Input placeholder="08xxxxxxxxxx" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={createForm.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                        <FormLabel>Alamat</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Alamat lengkap" {...field} rows={3} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  /> */}
                   <FormField
                     control={createForm.control}
                     name="password"
@@ -400,7 +345,6 @@ export default function PerawatPage() {
         </div>
       )}
 
-      {/* Edit Dialog */}
       <Dialog open={openEdit} onOpenChange={handleCloseEdit}>
         <DialogContent>
           <DialogHeader>
@@ -442,32 +386,6 @@ export default function PerawatPage() {
                   </FormItem>
                 )}
               />
-              {/* <FormField
-                control={editForm.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>No. HP</FormLabel>
-                    <FormControl>
-                      <Input placeholder="08xxxxxxxxxx" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editForm.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Alamat</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Alamat lengkap" {...field} rows={3} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              /> */}
               <FormField
                 control={editForm.control}
                 name="password"
@@ -500,7 +418,6 @@ export default function PerawatPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
       <AlertDialog open={!!confirmDelete} onOpenChange={(v) => !v && setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -524,7 +441,6 @@ export default function PerawatPage() {
   )
 }
 
-// ---------- Row Actions ----------
 function RowActions({ row, onEdit, onDelete }: { row: Nurse; onEdit: () => void; onDelete: () => void }) {
   return (
     <DropdownMenu>

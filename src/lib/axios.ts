@@ -4,14 +4,10 @@ import { toast } from "sonner"
 
 const baseURL = import.meta.env.VITE_API_BASE_URL
 
-// Tambah flag opsional per-request
 declare module "axios" {
   export interface AxiosRequestConfig {
-    /** Matikan semua toast untuk request ini */
     silent?: boolean
-    /** Paksa tampilkan success toast jika server kirim message */
     successToast?: boolean
-    /** Matikan error toast untuk request ini */
     errorToast?: boolean
     /** Success message custom */
     successMessage?: string
@@ -40,7 +36,6 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = []
 }
 
-// ------ Helpers ------
 function extractErrorMessage(err: unknown, override?: string): string {
   if (override) return override
   const axErr = err as AxiosError<any>
@@ -64,7 +59,6 @@ function maybeToastSuccess(response: any) {
 function maybeToastAppError(response: any) {
   const cfg = response?.config
   if (cfg?.silent) return
-  // Tangkap pola success:false dalam 2xx
   if (response?.data?.success === false) {
     const msg = response.data.error || response.data.message || cfg?.errorMessage || "Permintaan gagal."
     if (cfg?.errorToast !== false) {
@@ -73,7 +67,6 @@ function maybeToastAppError(response: any) {
   }
 }
 
-// ------ Interceptors ------
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const { accessToken } = useAuthStore.getState()
   if (accessToken) {
@@ -96,7 +89,6 @@ api.interceptors.response.use(
       toast.error(extractErrorMessage(error, originalRequest?.errorMessage))
     }
 
-    // 401 refresh flow
     if (status === 401 && !originalRequest?._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -113,11 +105,10 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const response = await axios.get(
-          `${baseURL}/auth/auto-renew`,
-          {},
-          { withCredentials: true, headers: { Accept: "application/json" } }
-        )
+        const response = await axios.get(`${baseURL}/auth/auto-renew`, {
+          withCredentials: true,
+          headers: { Accept: "application/json" },
+        })
         const { accessToken } = response.data
         useAuthStore.getState().setAccessToken(accessToken)
         processQueue(null, accessToken)

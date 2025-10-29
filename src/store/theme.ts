@@ -48,7 +48,6 @@ function applyPrimaryColor(color: string) {
   const g = Number.parseInt(hex.substring(2, 4), 16)
   const b = Number.parseInt(hex.substring(4, 6), 16)
 
-  // Convert RGB to HSL
   const rNorm = r / 255
   const gNorm = g / 255
   const bNorm = b / 255

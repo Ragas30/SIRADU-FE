@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, MoreHorizontal, Pencil, Trash2, Eye, EyeOff } from "lucide-react"
+import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import PageHeader from "@/components/common/page-header"
 import Toolbar from "@/components/common/toolbar"
 import DataTable, { type Column } from "@/components/common/data-table"
@@ -10,12 +10,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useList } from "@/hooks/useList"
 import { api } from "@/lib/axios"
-
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-
 import {
   Dialog,
   DialogContent,
@@ -25,10 +23,8 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog"
-
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +33,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,18 +43,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "sonner"
 
-// ================= Types =================
 export type Gender = "LAKI_LAKI" | "PEREMPUAN"
 export type Status = "ACTIVE" | "NON_ACTIVE"
 
 export interface Pasien {
   id: string
   name: string
-  nik: string
-  birthDate: string // ISO date
+  medicalRecordNumber: string
+  roomName?: string
+  birthDate: string
   bedNumber: number
   gender: Gender
   bradenQ: number
@@ -67,39 +62,48 @@ export interface Pasien {
   createdAt?: string
 }
 
-// ================= Zod Schemas =================
 const GenderEnum = z.enum(["LAKI_LAKI", "PEREMPUAN"])
 const StatusEnum = z.enum(["ACTIVE", "NON_ACTIVE"])
 
 const PasienCreateSchema = z.object({
   name: z.string().min(3, "Nama minimal 3 karakter"),
-  nik: z.string().regex(/^\d{16}$/, "NIK harus 16 digit"),
+  medicalRecordNumber: z.string().regex(/^\d{16}$/, "Nomor rekam medis harus 16 digit"),
+  roomName: z.string().min(1, "Nama ruangan wajib diisi"),
   birthDate: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Tanggal lahir tidak valid"),
-  bedNumber: z.coerce.number().int().min(1, "Nomor tempat tidur minimal 1"),
+  bedNumber: z.coerce.number().int().min(513, "Nomor tempat tidur harus minimal 513"),
   gender: GenderEnum,
   bradenQ: z.coerce.number().int().min(0, "BradenQ minimal 0"),
   status: StatusEnum,
 })
 type PasienCreateInput = z.infer<typeof PasienCreateSchema>
 
-const PasienEditSchema = PasienCreateSchema // saat ini field sama
+const PasienEditSchema = PasienCreateSchema
 type PasienEditInput = z.infer<typeof PasienEditSchema>
 
-// ================= Page =================
+const ID_TZ = "Asia/Jakarta"
+const fmtIDDate = (v: string | number | Date) => new Date(v).toLocaleDateString("id-ID", { timeZone: ID_TZ })
+
+function applyServerErrors<T extends Record<string, any>>(
+  setError: (name: any, err: { type?: string; message?: string }) => void,
+  errors?: Record<string, string>
+) {
+  if (!errors) return
+  Object.entries(errors).forEach(([k, msg]) => {
+    setError(k as any, { type: "server", message: msg })
+  })
+}
+
 export default function PasienPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
   const [sortBy, setSortBy] = useState<keyof Pasien>("name")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
-
   const [openCreate, setOpenCreate] = useState(false)
   const [openEdit, setOpenEdit] = useState(false)
   const [editing, setEditing] = useState<Pasien | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Pasien | null>(null)
-
   const queryClient = useQueryClient()
 
-  // ===== List: resource "pasiens" -> GET /pasiens
   const { data, isLoading } = useList<Pasien>("pasiens", {
     page,
     pageSize: 10,
@@ -108,14 +112,14 @@ export default function PasienPage() {
     sortOrder,
   })
 
-  // ===== Forms
   const createForm = useForm<PasienCreateInput>({
     resolver: zodResolver(PasienCreateSchema),
     defaultValues: {
       name: "",
-      nik: "",
+      medicalRecordNumber: "",
+      roomName: "",
       birthDate: "",
-      bedNumber: 1,
+      bedNumber: 513,
       gender: "LAKI_LAKI",
       bradenQ: 0,
       status: "ACTIVE",
@@ -126,42 +130,59 @@ export default function PasienPage() {
     resolver: zodResolver(PasienEditSchema),
     defaultValues: {
       name: "",
-      nik: "",
+      medicalRecordNumber: "",
+      roomName: "",
       birthDate: "",
-      bedNumber: 1,
+      bedNumber: 513,
       gender: "LAKI_LAKI",
       bradenQ: 0,
       status: "ACTIVE",
     },
   })
 
-  // ===== Mutations
-  // POST /pasienCreate
   const createMutation = useMutation({
     mutationFn: async (payload: PasienCreateInput) => {
       const { data } = await api.post("/pasienCreate", payload, { successToast: true })
+      if (data?.success === false && data?.error) {
+        const e = new Error("VALIDATION_ERROR") as any
+        e.fieldErrors = data.error
+        throw e
+      }
       return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pasiens"] })
       createForm.reset({
         name: "",
-        nik: "",
+        medicalRecordNumber: "",
+        roomName: "",
         birthDate: "",
-        bedNumber: 1,
+        bedNumber: 513,
         gender: "LAKI_LAKI",
         bradenQ: 0,
         status: "ACTIVE",
       })
       setOpenCreate(false)
     },
+    onError: (err: any) => {
+      const fieldErrors = err?.fieldErrors ?? err?.response?.data?.error ?? err?.data?.error
+      if (fieldErrors) {
+        applyServerErrors(createForm.setError, fieldErrors)
+      } else {
+        toast.error("Gagal menyimpan data.")
+      }
+    },
   })
 
-  // PUT /pasiens/:id  (ASUMSI — sesuaikan jika beda)
   const editMutation = useMutation({
     mutationFn: async (payload: PasienEditInput & { id: string }) => {
       const { id, ...body } = payload
       const { data } = await api.put(`/pasien/${id}`, body, { successToast: true })
+      if (data?.success === false && data?.error) {
+        const e = new Error("VALIDATION_ERROR") as any
+        e.fieldErrors = data.error
+        throw e
+      }
       return data
     },
     onSuccess: () => {
@@ -170,9 +191,16 @@ export default function PasienPage() {
       setEditing(null)
       editForm.reset()
     },
+    onError: (err: any) => {
+      const fieldErrors = err?.fieldErrors ?? err?.response?.data?.error ?? err?.data?.error
+      if (fieldErrors) {
+        applyServerErrors(editForm.setError, fieldErrors)
+      } else {
+        toast.error("Gagal menyimpan data.")
+      }
+    },
   })
 
-  // DELETE /pasiens/:id (ASUMSI — sesuaikan jika beda)
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await api.delete(`/pasiens/${id}`, { successToast: true })
@@ -184,15 +212,20 @@ export default function PasienPage() {
     },
   })
 
-  // ===== Columns
   const columns: Column<Pasien>[] = [
+    { key: "medicalRecordNumber", label: "No. RM", sortable: true },
     { key: "name", label: "Nama", sortable: true },
-    { key: "nik", label: "NIK", sortable: true },
+    {
+      key: "roomName",
+      label: "Ruangan",
+      sortable: true,
+      render: (v) => (v ? <Badge variant="outline">{String(v)}</Badge> : "-"),
+    },
     {
       key: "birthDate",
       label: "Tanggal Lahir",
       sortable: true,
-      render: (v) => new Date(String(v)).toLocaleDateString(),
+      render: (v) => fmtIDDate(String(v)),
     },
     { key: "bedNumber", label: "No. TT", sortable: true },
     {
@@ -220,7 +253,8 @@ export default function PasienPage() {
             setEditing(row)
             editForm.reset({
               name: row.name,
-              nik: row.nik,
+              medicalRecordNumber: row.medicalRecordNumber ?? "",
+              roomName: row.roomName ?? "",
               birthDate: row.birthDate?.slice(0, 10) ?? "",
               bedNumber: row.bedNumber,
               gender: row.gender,
@@ -235,15 +269,15 @@ export default function PasienPage() {
     },
   ]
 
-  // ===== Helpers
   const handleCloseCreate = (v: boolean) => {
     setOpenCreate(v)
     if (!v) {
       createForm.reset({
         name: "",
-        nik: "",
+        medicalRecordNumber: "",
+        roomName: "",
         birthDate: "",
-        bedNumber: 1,
+        bedNumber: 513,
         gender: "LAKI_LAKI",
         bradenQ: 0,
         status: "ACTIVE",
@@ -274,13 +308,11 @@ export default function PasienPage() {
                 Tambah Pasien
               </Button>
             </DialogTrigger>
-
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Tambah Pasien</DialogTitle>
                 <DialogDescription>Isi data pasien kemudian simpan.</DialogDescription>
               </DialogHeader>
-
               <Form {...createForm}>
                 <form onSubmit={createForm.handleSubmit((v) => createMutation.mutate(v))} className="space-y-4">
                   <FormField
@@ -296,21 +328,35 @@ export default function PasienPage() {
                       </FormItem>
                     )}
                   />
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={createForm.control}
-                      name="nik"
+                      name="medicalRecordNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>NIK</FormLabel>
+                          <FormLabel>No. RM</FormLabel>
                           <FormControl>
-                            <Input placeholder="16 digit NIK" {...field} />
+                            <Input placeholder="16 digit nomor rekam medis" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={createForm.control}
+                      name="roomName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nama Ruangan</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Contoh: seruni" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={createForm.control}
                       name="birthDate"
@@ -324,9 +370,6 @@ export default function PasienPage() {
                         </FormItem>
                       )}
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={createForm.control}
                       name="bedNumber"
@@ -334,12 +377,14 @@ export default function PasienPage() {
                         <FormItem>
                           <FormLabel>No. Tempat Tidur</FormLabel>
                           <FormControl>
-                            <Input type="number" min={1} {...field} />
+                            <Input type="number" min={513} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={createForm.control}
                       name="gender"
@@ -374,30 +419,28 @@ export default function PasienPage() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={createForm.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                                <SelectItem value="NON_ACTIVE">INACTIVE</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-
-                  <FormField
-                    control={createForm.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <FormControl>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="ACTIVE">ACTIVE</SelectItem>
-                              <SelectItem value="NON_ACTIVE">INACTIVE</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <DialogFooter>
                     <Button
                       type="button"
@@ -439,14 +482,12 @@ export default function PasienPage() {
         </div>
       )}
 
-      {/* Edit Dialog */}
       <Dialog open={openEdit} onOpenChange={handleCloseEdit}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Pasien</DialogTitle>
             <DialogDescription>Perbarui data pasien lalu simpan.</DialogDescription>
           </DialogHeader>
-
           <Form {...editForm}>
             <form
               onSubmit={editForm.handleSubmit((values) => {
@@ -468,21 +509,35 @@ export default function PasienPage() {
                   </FormItem>
                 )}
               />
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={editForm.control}
-                  name="nik"
+                  name="medicalRecordNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>NIK</FormLabel>
+                      <FormLabel>No. RM</FormLabel>
                       <FormControl>
-                        <Input placeholder="16 digit NIK" {...field} />
+                        <Input placeholder="16 digit nomor rekam medis" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={editForm.control}
+                  name="roomName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nama Ruangan</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Contoh: seruni" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={editForm.control}
                   name="birthDate"
@@ -496,9 +551,6 @@ export default function PasienPage() {
                     </FormItem>
                   )}
                 />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={editForm.control}
                   name="bedNumber"
@@ -506,12 +558,14 @@ export default function PasienPage() {
                     <FormItem>
                       <FormLabel>No. Tempat Tidur</FormLabel>
                       <FormControl>
-                        <Input type="number" min={1} {...field} />
+                        <Input type="number" min={513} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={editForm.control}
                   name="gender"
@@ -546,30 +600,28 @@ export default function PasienPage() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={editForm.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <FormControl>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                            <SelectItem value="NON_ACTIVE">INACTIVE</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-
-              <FormField
-                control={editForm.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <FormControl>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ACTIVE">ACTIVE</SelectItem>
-                          <SelectItem value="NON_ACTIVE">INACTIVE</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <DialogFooter>
                 <Button
                   type="button"
@@ -588,7 +640,6 @@ export default function PasienPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
       <AlertDialog open={!!confirmDelete} onOpenChange={(v) => !v && setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -612,7 +663,6 @@ export default function PasienPage() {
   )
 }
 
-// ============== Row Actions ==============
 function RowActions({ row, onEdit, onDelete }: { row: Pasien; onEdit: () => void; onDelete: () => void }) {
   return (
     <DropdownMenu>

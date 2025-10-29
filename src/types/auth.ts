@@ -1,4 +1,3 @@
-// src/types/auth.ts
 export type RoleName = "KEPALA_PERAWAT" | "MANAGER" | "STAFF"
 
 export type UserRole = {

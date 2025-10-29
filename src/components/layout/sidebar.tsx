@@ -1,4 +1,3 @@
-// src/components/layout/sidebar.tsx
 "use client"
 
 import { NavLink, useLocation } from "react-router-dom"
@@ -27,14 +26,13 @@ type MenuItem = {
   label: string
   href: string
   icon: React.ComponentType<{ className?: string }>
-  roles?: RoleName[] // jika diisi, hanya role tsb yang bisa melihat
+  roles?: RoleName[]
 }
 
 export default function AppSidebar() {
   const location = useLocation()
   const { user, logout } = useAuthStore()
 
-  // role backend-mu tampaknya single (user.role)
   const roles = useMemo<RoleName[]>(() => (user?.role ? [user.role as RoleName] : []), [user?.role])
 
   const canSee = (item: MenuItem) => {
@@ -42,7 +40,6 @@ export default function AppSidebar() {
     return item.roles.some((r) => roles.includes(r))
   }
 
-  // --- Groups terstruktur ---
   const groups: { label: string; items: MenuItem[] }[] = [
     {
       label: "Overview",
@@ -84,9 +81,10 @@ export default function AppSidebar() {
 
   return (
     <Sidebar className="border-r">
-      <SidebarHeader>
-        <div className="px-3 py-3 font-semibold tracking-tight">
-          <span className="text-primary">Siradu</span>
+      <SidebarHeader className="px-3 py-3 font-semibold tracking-tight flex items-center gap-2">
+        <div className="flex items-center" onClick={() => (window.location.href = "/")}>
+          <img src="/siradu.png" alt="Siradu" className="w-12 h-12 mr-2" />
+          <span className="text-primary text-xl font-bold tracking-tight">Siradu</span>
         </div>
       </SidebarHeader>
 
@@ -101,7 +99,6 @@ export default function AppSidebar() {
                 <SidebarMenu>
                   {visibleItems.map((item) => {
                     const Icon = item.icon
-                    // aktif jika persis path atau berada di bawahnya
                     const active = location.pathname === item.href || location.pathname.startsWith(item.href + "/")
                     return (
                       <SidebarMenuItem key={item.href}>

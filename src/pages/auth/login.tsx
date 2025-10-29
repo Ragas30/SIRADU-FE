@@ -7,6 +7,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
+          <img src="/siradu.png" alt="siradu" className="w-32 h-32 mx-auto mb-4" />
           <h1 className="text-4xl font-bold text-primary mb-2">Siradu Admin</h1>
           <p className="text-muted-foreground">Kelola aplikasi Anda dengan mudah</p>
         </div>
