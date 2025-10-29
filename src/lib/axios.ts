@@ -113,8 +113,8 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const response = await axios.post(
-          `${baseURL}/auth/refresh`,
+        const response = await axios.get(
+          `${baseURL}/auth/auto-renew`,
           {},
           { withCredentials: true, headers: { Accept: "application/json" } }
         )

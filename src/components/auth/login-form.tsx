@@ -38,6 +38,7 @@ export default function LoginForm() {
     setError(null)
     try {
       const response = await api.post("/dashboard/login", data, { successToast: true })
+      console.log(response?.data?.data?.user)
       setAccessToken(response?.data?.data?.accessToken || null)
       setUser(response?.data?.data?.user || null)
       navigate("/dashboard")

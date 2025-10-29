@@ -67,7 +67,7 @@ export const handlers = [
     return res(ctx.status(401), ctx.json({ error: "Invalid credentials" }))
   }),
 
-  rest.post(`${baseURL}/auth/refresh`, (req, res, ctx) => {
+  rest.post(`${baseURL}/auth/auto-renew`, (req, res, ctx) => {
     return res(ctx.status(200), ctx.json({ accessToken: "mock-token-123" }))
   }),
 
